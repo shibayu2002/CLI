@@ -2214,3 +2214,6 @@ Caused by: D:\opt\eclipse\jee-neon\eclipse\workspace_cli\JChart\src\net\zive\shi
 	at com.puppycrawl.tools.checkstyle.TreeWalker.parse(TreeWalker.java:439)
 	at com.puppycrawl.tools.checkstyle.TreeWalker.processFiltered(TreeWalker.java:174)
 	... 19 more
+
+!ENTRY org.eclipse.equinox.security 1 0 2018-02-06 20:19:25.486
+!MESSAGE New keyring password generated. 

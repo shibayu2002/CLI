@@ -1,0 +1,82 @@
+package net.zive.shibayu.cli;
+
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import gnu.getopt.Getopt;
+import net.zive.shibayu.cli.base.BaseFileInCli;
+
+/**
+ * jgrepコマンド.
+ * @author Yu.Sba
+ *
+ */
+public class JGrep extends BaseFileInCli {
+    /**
+     * 表示列番号.
+     */
+    private Pattern pattern = null;
+
+    @Override
+    protected final boolean checkArgs(final String[] args) {
+        Getopt g = new Getopt(this.getClass().getName(), args, "p:");
+
+        int c = -1;
+        while ((c = g.getopt()) != -1) {
+            switch (c) {
+            case 'p':
+                pattern = Pattern.compile(g.getOptarg());
+                return true;
+            default:
+                return false;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    protected void beforeAccept() throws Exception {
+    }
+
+    @Override
+    protected final boolean accept(final String data) throws Exception {
+        Matcher m = pattern.matcher(data);
+        if (m.find()) {
+            System.out.println(data);
+        }
+        return true;
+    }
+
+    @Override
+    protected void afterAccept() throws Exception {
+    }
+
+    @Override
+    protected final String helpString() {
+        StringBuilder stb = new StringBuilder();
+        stb.append("<概要>\n");
+        stb.append("jgrepコマンド。\n");
+        stb.append("指定された検索文字列に該当する行を標準出力に出力する。\n\n");
+        stb.append("<コマンド>\n");
+        stb.append("jgrep [FILE] -p 検索文字列(正規表現) \n\n");
+        stb.append("<引数>\n");
+        stb.append("FILE:ファイル(※省略可)\n");
+        stb.append("* FILEを省略した場合は標準入力からデータを受取る。");
+        stb.append("<オプション>\n");
+        stb.append("-p:検索文字列(正規表現)\n");
+        return stb.toString();
+    }
+
+    @Override
+    protected final String usageString() {
+        return "Usage:jgrep [FILE] -p 検索文字列(正規表現)";
+    }
+
+    /**
+     * メイン処理.
+     * @param args コマンド引数
+     */
+    public static void main(final String[] args) {
+        (new JGrep()).exec(args);
+    }
+}
