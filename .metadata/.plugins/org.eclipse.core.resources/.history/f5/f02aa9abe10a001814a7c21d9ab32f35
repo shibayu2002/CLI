@@ -1,0 +1,207 @@
+package net.zive.shibayu.cli;
+
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.text.DecimalFormat;
+import java.util.LinkedList;
+import java.util.List;
+
+import net.zive.shibayu.com.db.SQLiteConnection;
+import net.zive.shibayu.com.lang.MathUtil;
+import net.zive.shibayu.com.lang.NumberUtil;
+import net.zive.shibayu.com.obj.PriorityElement;
+
+/**
+ * <p>時価.</p>
+ *
+ * Copyright（C）Yuu Shiba All Rights Reserved.
+ */
+public class Price {
+    /** 基準日時. */
+    private String date;
+    /** 銘柄コード. */
+    private String code;
+    /** 始値. */
+    private double open;
+    /** 高値. */
+    private double high;
+    /** 安値. */
+    private double low;
+    /** 終値. */
+    private double close;
+    /** 出来高. */
+    private double volume;
+
+    /**
+     * コンストラクタ.
+     */
+    public Price() {
+    }
+
+    /**
+     * コンストラクタ.
+     * @param aDate 基準日時
+     * @param aCode 銘柄コード
+     * @param aOpen 始値
+     * @param aHigh 高値
+     * @param aLow 安値
+     * @param aClose 終値
+     * @param aVolume 出来高
+     */
+    public Price(final String aDate, final String aCode,
+            final double aHigh, final double aLow,
+            final double aOpen, final double aClose,
+            final double aVolume) {
+        this.date = aDate;
+        this.code = aCode;
+        this.open = aOpen;
+        this.high = aHigh;
+        this.low = aLow;
+        this.close = aClose;
+        this.volume = aVolume;
+    }
+
+    /**
+     * 基準日時Getter.
+     * @return 基準日
+     */
+    public final String getDate() {
+        return date;
+    }
+
+    /**
+     * 銘柄コードGetter.
+     * @return 銘柄コード
+     */
+    public final String getCode() {
+        return code;
+    }
+
+    /**
+     * 始値Getter.
+     * @return 始値
+     */
+    public final double getOpen() {
+        return nvl(open, close);
+    }
+
+    /**
+     * 高値Getter.
+     * @return 高値
+     */
+    public final double getHigh() {
+        return nvl(high, close);
+    }
+
+    /**
+     * 終値Getter.
+     * @return 終値
+     */
+    public final double getLow() {
+        return nvl(low, close);
+    }
+
+    /**
+     * 終値Getter.
+     * @return 終値
+     */
+    public final double getClose() {
+        return close;
+    }
+
+    /**
+     * 出来高Getter.
+     * @return 出来高
+     */
+    public final double getVolume() {
+        return volume;
+    }
+
+    @Override
+    public final String toString() {
+        DecimalFormat df = new DecimalFormat("##0.0000");
+
+        StringBuilder stb = new StringBuilder();
+        stb.append(date).append("\t");
+        stb.append(code).append("\t");
+        stb.append(open).append("\t");
+        stb.append(high).append("\t");
+        stb.append(low).append("\t");
+        stb.append(close).append("\t");
+        stb.append(volume).append("\t");
+        return stb.toString();
+    }
+
+    /**
+     * CVS形式の文字列表現を返す.
+     * @return CVS形式の文字列表現
+     */
+    public final String toCVSString() {
+        DecimalFormat df = new DecimalFormat("##0.0000");
+
+        StringBuilder stb = new StringBuilder();
+        stb.append(date).append(",");   // 日付
+        stb.append(code).append(",");   // コード
+        stb.append(close).append(",");  // 時価(終値)
+        for (int i = 0; i < ratio.length; i++) {
+            stb.append(df.format(ratio[i])).append(",");    // 騰落率
+        }
+        stb.append(df.format(getRatioMedium())).append(",");  // 騰落率の中央値
+        stb.append(df.format(getRatioMediumAbs()));            // 騰落率の中央値の絶対値
+        return stb.toString();
+    }
+
+    /**
+     * 騰落率を設定する.
+     * @param r 騰落率
+     */
+    public final void setRatio(final double[] r) {
+        this.ratio = new double[r.length];
+        for (int i = 0; i < r.length; i++) {
+            this.ratio[i] = r[i] * 100;// CHECKSTYLE IGNORE THIS LINE
+        }
+    }
+
+    /**
+     * 騰落率を返す.
+     * @return 騰落率
+     */
+    public final double[] getRatio() {
+        return this.ratio;
+    }
+
+    /**
+     * 騰落率の中央値を返す.
+     * @return 騰落率の中央値
+     */
+    public final double getRatioMedium() {
+        if (this.ratio == null) {
+            return this.ratioAve;
+        } else {
+            return MathUtil.medium(this.ratio);
+        }
+    }
+
+    /**
+     * 騰落率の中央値の絶対値を返す.
+     * @return 騰落率の中央値の絶対値
+     */
+    public final double getRatioMediumAbs() {
+        return Math.abs(getRatioMedium());
+    }
+
+    /**
+     * 優先順位を設定する.
+     * @param p 優先順位
+     */
+    public final void setPriority(final double p) {
+        this.priority = p * 1000000;// CHECKSTYLE IGNORE THIS LINE
+    }
+
+    @Override
+    public final double getPriority() {
+        return this.priority;
+    }
+}

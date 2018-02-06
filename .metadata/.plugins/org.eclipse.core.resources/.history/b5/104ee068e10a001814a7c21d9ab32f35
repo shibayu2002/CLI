@@ -1,0 +1,538 @@
+package net.zive.shibayu.cli;
+
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.text.DecimalFormat;
+import java.util.LinkedList;
+import java.util.List;
+
+import net.zive.shibayu.com.db.SQLiteConnection;
+import net.zive.shibayu.com.lang.MathUtil;
+import net.zive.shibayu.com.lang.NumberUtil;
+import net.zive.shibayu.com.obj.PriorityElement;
+
+/**
+ * <p>時価.</p>
+ *
+ * Copyright（C）Yuu Shiba All Rights Reserved.
+ */
+public class Price {
+    /** 基準日時. */
+    private String date;
+    /** 銘柄コード. */
+    private String code;
+    /** 高値. */
+    private double high;
+    /** 安値. */
+    private double low;
+    /** 始値. */
+    private double open;
+    /** 終値. */
+    private double close;
+    /** 出来高. */
+    private double volume;
+
+    /**
+     * コンストラクタ.
+     */
+    public Price() {
+    }
+
+    /**
+     * コンストラクタ.
+     * @param aDate 基準日時
+     * @param aCode 銘柄コード
+     * @param aHigh 高値
+     * @param aLow 安値
+     * @param aOpen 始値
+     * @param aClose 終値
+     * @param aVolume 出来高
+     */
+    public Price(final String aDate, final String aCode,
+            final double aHigh, final double aLow,
+            final double aOpen, final double aClose,
+            final double aVolume) {
+        this.date = aDate;
+        this.code = aCode;
+        this.high = aHigh;
+        this.low = aLow;
+        this.open = aOpen;
+        this.close = aClose;
+        this.volume = aVolume;
+    }
+
+    /**
+     * 時価をロードする.
+     * @param startDate 開始日
+     * @param endDate 終了日
+     * @param code コード
+     * @return 時価リスト
+     * @throws ClassNotFoundException DBエラー
+     * @throws SQLException SQLエラー
+     */
+    public static List<Price> loadPrice(final String startDate,
+            final String endDate, final String code)
+            throws ClassNotFoundException, SQLException {
+        String sql = "SELECT date, code, open, high, low, close, volume "
+                + "FROM Price "
+                + "WHERE date >= 'START_DATE' and date <= 'END_DATE'"
+                + " and code='SEC_CODE'";
+        sql = sql.replaceAll("START_DATE", startDate);
+        sql = sql.replaceAll("END_DATE", endDate);
+        sql = sql.replaceAll("SEC_CODE", code);
+
+        return loadPrice(sql);
+    }
+
+    /**
+     * 時価をロードする.
+     * @param con コネクション
+     * @param startDate 開始日
+     * @param endDate 終了日
+     * @param code コード
+     * @return 時価リスト
+     * @throws ClassNotFoundException DBエラー
+     * @throws SQLException SQLエラー
+     */
+    public static List<Price> loadPrice(final Connection con,
+            final String startDate,
+            final String endDate, final String code)
+            throws ClassNotFoundException, SQLException {
+        String sql = "SELECT date, code, open, high, low, close, volume "
+                + "FROM Price "
+                + "WHERE date >= 'START_DATE' and date <= 'END_DATE'"
+                + " and code='SEC_CODE'";
+        sql = sql.replaceAll("START_DATE", startDate);
+        sql = sql.replaceAll("END_DATE", endDate);
+        sql = sql.replaceAll("SEC_CODE", code);
+
+        Statement stmt = con.createStatement();
+
+        ResultSet rs = stmt.executeQuery(sql);
+        List<Price> prices = new LinkedList<Price>();
+        while (rs.next()) {
+            Price price = new Price();
+            price.date = rs.getString("date");
+            price.code = rs.getString("code");
+            price.open = rs.getDouble("open");
+            price.high = rs.getDouble("high");
+            price.low = rs.getDouble("low");
+            price.close = rs.getDouble("close");
+            price.volume = rs.getDouble("volume");
+
+            prices.add(price);
+        }
+        stmt.close();
+
+        return prices;
+    }
+
+    /**
+     * 時価をロードする.
+     * @param minRatio 最少騰落率
+     * @param maxRatio 最大騰落率
+     * @param badCode 取得対象外銘柄
+     * @return 時価リスト
+     * @throws ClassNotFoundException DBエラー
+     * @throws SQLException SQLエラー
+     */
+    public static List<Price> loadPriceFromPriceRatio(final double minRatio,
+            final double maxRatio, final String[] badCode)
+            throws ClassNotFoundException, SQLException {
+        StringBuilder stb = new StringBuilder();
+        stb.append("select");
+        stb.append("  P.date,");
+        stb.append("  P.code,");
+        stb.append("  P.open,");
+        stb.append("  P.high,");
+        stb.append("  P.low,");
+        stb.append("  P.close,");
+        stb.append("  P.volume,");
+        stb.append("  D.ratio_medium ");
+        stb.append("from");
+        stb.append("  (select ");
+        stb.append("     max(date) as date, code ");
+        stb.append("   from ");
+        stb.append("     PriceRatio");
+        stb.append("   where");
+        stb.append("     ratio_medium_abs >= MIN_RATIO and");
+        stb.append("     ratio_medium_abs <= MAX_RATIO");
+        stb.append("   group by");
+        stb.append("     code, ratio_medium_abs");
+        stb.append("  ) M ");
+        stb.append("  inner join PriceRatio D ");
+        stb.append("    on M.date = D.date and M.code = D.code");
+        stb.append("  inner join Price P");
+        stb.append("    on M.date = P.date and M.code = P.code");
+
+
+        String sql = stb.toString();
+        sql = sql.replaceAll("MIN_RATIO", String.format("%.1f", minRatio));
+        sql = sql.replaceAll("MAX_RATIO", String.format("%.1f", maxRatio));
+
+        Connection con = SQLiteConnection.getInstance();
+        Statement stmt = con.createStatement();
+
+        ResultSet rs = stmt.executeQuery(sql);
+        List<Price> prices = new LinkedList<Price>();
+        while (rs.next()) {
+            if (badCodeCheck(rs.getString("code"), badCode)) {
+                continue;
+            }
+            Price price = new Price();
+            price.date = rs.getString("date");
+            price.code = rs.getString("code");
+            price.open = rs.getDouble("open");
+            price.high = rs.getDouble("high");
+            price.low = rs.getDouble("low");
+            price.close = rs.getDouble("close");
+            price.volume = rs.getDouble("volume");
+            price.ratioAve = rs.getDouble("ratio_medium");
+
+            prices.add(price);
+        }
+        stmt.close();
+        con.close();
+
+        return prices;
+
+    }
+
+    /**
+     * 取得対象外銘柄チェック.
+     * @param code 銘柄コード
+     * @param badCodes 取得対象外銘柄
+     * @return 真偽
+     */
+    private static boolean badCodeCheck(final String code,
+            final String[] badCodes) {
+        if (badCodes == null) {
+            return false;
+        }
+        for (String bd : badCodes) {
+            if (code.equals(bd)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * 時価をロードする.
+     * dateを基準日に指定したspanの時価をロードする.
+     * @param date 終了日
+     * @param span 期間
+     * @param code コード
+     * @return 時価リスト
+     * @throws ClassNotFoundException DBエラー
+     * @throws SQLException SQLエラー
+     * @throws NotExsitDateException 日付取得エラー
+     */
+    public static List<Price> loadPrice(final String date,
+            final int span, final String code)
+            throws ClassNotFoundException, SQLException, NotExsitDateException {
+        Calender c = Calender.getInstance();
+        String startDate = null;
+        String endDate = null;
+        if (span >= 0) {
+            startDate = c.getNearDate(date);
+            endDate = c.addDate(date, span);
+        } else {
+            startDate = c.addDate(date, span);
+            endDate = c.getNearDate(date);
+        }
+
+        String sql = "SELECT date, code, open, high, low, close, volume "
+                + "FROM Price "
+                + "WHERE date >= 'START_DATE' and date <= 'END_DATE'"
+                + " and code='SEC_CODE'";
+        sql = sql.replaceAll("START_DATE", startDate);
+        sql = sql.replaceAll("END_DATE", endDate);
+        sql = sql.replaceAll("SEC_CODE", code);
+
+        return loadPrice(sql);
+    }
+
+    /**
+     * 時価をロードする.
+     * @param sql SQL
+     * @return 時価リスト
+     * @throws ClassNotFoundException DBエラー
+     * @throws SQLException SQLエラー
+     */
+    private static List<Price> loadPrice(final String sql)
+            throws SQLException, ClassNotFoundException {
+        Connection con = SQLiteConnection.getInstance();
+        Statement stmt = con.createStatement();
+
+        ResultSet rs = stmt.executeQuery(sql);
+        List<Price> prices = new LinkedList<Price>();
+        while (rs.next()) {
+            Price price = new Price();
+            price.date = rs.getString("date");
+            price.code = rs.getString("code");
+            price.open = rs.getDouble("open");
+            price.high = rs.getDouble("high");
+            price.low = rs.getDouble("low");
+            price.close = rs.getDouble("close");
+            price.volume = rs.getDouble("volume");
+
+            prices.add(price);
+        }
+        stmt.close();
+        con.close();
+
+        return prices;
+    }
+
+    /**
+     * 時価を保存する.
+     * @param prices 時価リスト
+     * @throws ClassNotFoundException DBエラー
+     * @throws SQLException SQLエラー
+     * @throws NotExsitDateException 日付取得エラー
+     */
+    public static void savePrice(final List<Price> prices)
+            throws ClassNotFoundException, SQLException, NotExsitDateException {
+        Connection con = SQLiteConnection.getInstance();
+        Statement stmt = con.createStatement();
+
+        for (Price p : prices) {
+            String sql = "DELETE FROM Price "
+                    + "WHERE date = 'BASE_DATE' and code='SEC_CODE'";
+            sql = sql.replaceAll("BASE_DATE", p.getDate());
+            sql = sql.replaceAll("SEC_CODE", p.getCode());
+            stmt.execute(sql);
+
+            sql = "INSERT INTO Price "
+                    + "(date, code, open, high, low, close, volume) "
+                    + "VALUES "
+                    + "('_date', '_code', _open, _high, _low, _close, _volume)";
+            sql = sql.replaceAll("_date", p.getDate());
+            sql = sql.replaceAll("_code", p.getCode());
+            sql = sql.replaceAll("_open", numToStr(p.getOpen()));
+            sql = sql.replaceAll("_high", numToStr(p.getHigh()));
+            sql = sql.replaceAll("_low", numToStr(p.getLow()));
+            sql = sql.replaceAll("_close", numToStr(p.getClose()));
+            sql = sql.replaceAll("_volume", numToStr(p.getVolume()));
+            stmt.execute(sql);
+        }
+        stmt.close();
+        con.close();
+    }
+
+    /**
+     * 数字を文字列に変換する.
+     * @param d 数字
+     * @return 文字列
+     */
+    private static String numToStr(final double d) {
+        return NumberUtil.toString(d, "%.0f");
+    }
+
+    /**
+     * 基準日Getter.
+     * @return 基準日
+     */
+    public final String getDate() {
+        return date;
+    }
+
+    /**
+     * 銘柄コードGetter.
+     * @return 銘柄コード
+     */
+    public final String getCode() {
+        return code;
+    }
+
+    /**
+     * 高値Getter.
+     * @return 高値
+     */
+    public final double getHigh() {
+        return nvl(high, close);
+    }
+
+    /**
+     * 終値Getter.
+     * @return 終値
+     */
+    public final double getLow() {
+        return nvl(low, close);
+    }
+
+    /**
+     * 始値Getter.
+     * @return 始値
+     */
+    public final double getOpen() {
+        return nvl(open, close);
+    }
+
+    /**
+     * 終値Getter.
+     * @return 終値
+     */
+    public final double getClose() {
+        return close;
+    }
+
+    /**
+     * 出来高Getter.
+     * @return 出来高
+     */
+    public final double getVolume() {
+        return volume;
+    }
+
+    /**
+     * valueが0の場合はdefaultを返す.
+     * @param value 値
+     * @param def デフォルト
+     * @return 値
+     */
+    private double nvl(final double value, final double def) {
+        if (value > 0) {
+            return value;
+        }
+        return def;
+    }
+
+    /**
+     * 騰落率計算.
+     * @param target 比較対象
+     * @return 騰落率
+     */
+    public final double getRatio(final Price target) {
+        double c1 = this.getClose();
+        double c2 = target.getClose();
+        if (c1 == 0) {
+            return 0;
+        } else {
+//            System.out.println(" 1:date" + this.date
+//                    + " 1:price" + this.getClose()
+//                    + " 2date:" + target.date
+//                    + " 2:price" + target.getClose());
+            return (c2 - c1) / c1;
+        }
+    }
+
+    /**
+     * 5日後の騰落率.
+     * @return 騰落率
+     */
+    public final double get5DayAfterRatio() {
+        try {
+            List<Price> prices = loadPrice(date, FIVE_DAY, code);
+
+            double c1 = this.getClose();
+            double c2 = prices.get(prices.size() - 1).getClose();
+            if (c1 == 0) {
+                return 0;
+            } else {
+                return (c2 - c1) / c1;
+            }
+        } catch (ClassNotFoundException | SQLException
+                | NotExsitDateException e) {
+            // データが無い場合は騰落率0とみなす
+            return 0;
+        }
+    }
+
+    @Override
+    public final String toString() {
+        DecimalFormat df = new DecimalFormat("##0.0000");
+
+        StringBuilder stb = new StringBuilder();
+        stb.append(date).append("\t");
+        stb.append(code).append("\t");
+        stb.append(open).append("\t");
+        stb.append(high).append("\t");
+        stb.append(low).append("\t");
+        stb.append(close).append("\t");
+        stb.append(volume).append("\t");
+        if (ratio != null) {
+            for (int i = 0; i < ratio.length; i++) {
+                stb.append(df.format(ratio[i])).append("\t");
+            }
+            stb.append(priority);
+        } else {
+            stb.append(ratioAve);
+        }
+        return stb.toString();
+    }
+
+    /**
+     * CVS形式の文字列表現を返す.
+     * @return CVS形式の文字列表現
+     */
+    public final String toCVSString() {
+        DecimalFormat df = new DecimalFormat("##0.0000");
+
+        StringBuilder stb = new StringBuilder();
+        stb.append(date).append(",");   // 日付
+        stb.append(code).append(",");   // コード
+        stb.append(close).append(",");  // 時価(終値)
+        for (int i = 0; i < ratio.length; i++) {
+            stb.append(df.format(ratio[i])).append(",");    // 騰落率
+        }
+        stb.append(df.format(getRatioMedium())).append(",");  // 騰落率の中央値
+        stb.append(df.format(getRatioMediumAbs()));            // 騰落率の中央値の絶対値
+        return stb.toString();
+    }
+
+    /**
+     * 騰落率を設定する.
+     * @param r 騰落率
+     */
+    public final void setRatio(final double[] r) {
+        this.ratio = new double[r.length];
+        for (int i = 0; i < r.length; i++) {
+            this.ratio[i] = r[i] * 100;// CHECKSTYLE IGNORE THIS LINE
+        }
+    }
+
+    /**
+     * 騰落率を返す.
+     * @return 騰落率
+     */
+    public final double[] getRatio() {
+        return this.ratio;
+    }
+
+    /**
+     * 騰落率の中央値を返す.
+     * @return 騰落率の中央値
+     */
+    public final double getRatioMedium() {
+        if (this.ratio == null) {
+            return this.ratioAve;
+        } else {
+            return MathUtil.medium(this.ratio);
+        }
+    }
+
+    /**
+     * 騰落率の中央値の絶対値を返す.
+     * @return 騰落率の中央値の絶対値
+     */
+    public final double getRatioMediumAbs() {
+        return Math.abs(getRatioMedium());
+    }
+
+    /**
+     * 優先順位を設定する.
+     * @param p 優先順位
+     */
+    public final void setPriority(final double p) {
+        this.priority = p * 1000000;// CHECKSTYLE IGNORE THIS LINE
+    }
+
+    @Override
+    public final double getPriority() {
+        return this.priority;
+    }
+}

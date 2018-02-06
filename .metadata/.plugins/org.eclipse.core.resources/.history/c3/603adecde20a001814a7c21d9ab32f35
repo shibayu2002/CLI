@@ -1,0 +1,193 @@
+package net.zive.shibayu.cli;
+
+import java.awt.BasicStroke;
+import java.awt.Color;
+import java.io.File;
+import java.util.Date;
+import java.util.LinkedList;
+import java.util.List;
+
+import org.jfree.chart.ChartUtilities;
+import org.jfree.chart.JFreeChart;
+import org.jfree.chart.axis.DateAxis;
+import org.jfree.chart.axis.NumberAxis;
+import org.jfree.chart.plot.XYPlot;
+import org.jfree.chart.renderer.xy.CandlestickRenderer;
+import org.jfree.data.xy.DefaultHighLowDataset;
+
+import gnu.getopt.Getopt;
+import net.zive.shibayu.com.DateUtil;
+
+/**
+ * チャート作成コマンド.
+ * @author Yu.Sba
+ *
+ */
+public class Chart extends BaseCli {
+    /** 画像ファイル縦幅. */
+    private static final int IMG_HEIGHT = 600;
+    /** 画像ファイル横幅. */
+    private static final int IMG_WIDTH =
+            (int) (IMG_HEIGHT * 1.6);  // 黄金比
+    /** ラインサイズ. */
+    private static final int LINE_SIZE = 10;
+    /** 金額の最小値. */
+    private static final double MIN_PRICE = 100.0;
+    /** 金額の最大値. */
+    private static final double MAX_PRICE = 120.0;
+
+    /** 始値の列番号. */
+    private static final int OPEN_NUM = 1;
+    /** 高値の列番号. */
+    private static final int HIGH_NUM = 2;
+    /** 安値の列番号. */
+    private static final int LOW_NUM = 3;
+    /** 終値の列番号. */
+    private static final int CLOSE_NUM = 4;
+
+    /**
+     * 出力ファイルパス.
+     */
+    private File file = null;
+
+    /**
+     * 入力データ.
+     */
+    private List<Price> list = new LinkedList<Price>();
+
+    @Override
+    protected final boolean checkArgs(final String[] args) {
+        Getopt g = new Getopt(this.getClass().getName(), args, "o:");
+
+        int c = -1;
+        while ((c = g.getopt()) != -1) {
+            switch (c) {
+            case 'o':
+                file = new File(g.getOptarg().trim());
+                return true;
+            default:
+                return false;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    protected final void beforeAccept() throws Exception {
+        list.clear();
+    }
+
+    @Override
+    protected final void accept(final String data) throws Exception {
+        String[] row = data.split(",");
+        Price p = new Price(
+                DateUtil.strToDate(row[0], "yyyy/MM/dd HH:mm"), 
+                "USD/JPY", 
+                Double.parseDouble(row[OPEN_NUM]), 
+                Double.parseDouble(row[HIGH_NUM]), 
+                Double.parseDouble(row[LOW_NUM]), 
+                Double.parseDouble(row[CLOSE_NUM]), 
+                1.0);
+        
+        list.add(row);
+    }
+
+    @Override
+    protected final void afterAccept() throws Exception {
+        DefaultHighLowDataset dataset = createDataset(list);
+        CandlestickRenderer renderer = new CandlestickRenderer();
+
+        renderer.setCandleWidth(LINE_SIZE);
+        renderer.setUpPaint(Color.BLUE);
+        renderer.setDownPaint(Color.RED);
+
+        renderer.setUseOutlinePaint(true);
+        renderer.setBaseOutlinePaint(Color.BLACK);
+        renderer.setBasePaint(Color.BLACK);
+        renderer.setBaseOutlineStroke(new BasicStroke(1));
+
+        renderer.setDrawVolume(false);   // 出来高表示なし
+        renderer.setVolumePaint(Color.GREEN);
+
+        renderer.setBaseItemLabelsVisible(false);
+        DateAxis dateAxis = new DateAxis();
+        dateAxis.setVisible(true);
+        dateAxis.setTickLabelsVisible(true);
+
+        NumberAxis priceAxis = new NumberAxis();
+        priceAxis.setAutoRange(false);
+        priceAxis.setRange(dataset.getLowValue(0, 0) - 1,
+                dataset.getHighValue(0, 0) + 1);
+        priceAxis.setTickLabelsVisible(true);
+        XYPlot plot = new XYPlot(dataset, dateAxis, priceAxis, renderer);
+        JFreeChart chart = new JFreeChart(plot);
+
+        ChartUtilities.saveChartAsPNG(file,
+                chart, IMG_WIDTH, IMG_HEIGHT);
+    }
+
+    @Override
+    protected final String helpString() {
+        StringBuilder stb = new StringBuilder();
+        stb.append("<概要>\n");
+        stb.append("chartコマンド。\n");
+        stb.append("指定されたCSVデータからチャートを作成する。\n\n");
+        stb.append("<コマンド>\n");
+        stb.append("Usage:chart [DATA] -o output path \n\n");
+        stb.append("<引数>\n");
+        stb.append("DATA:一行のCSVデータ(※省略可)\n");
+        stb.append("* DATAを省略した場合は標準入力からCSVデータを受取る。");
+        stb.append("標準入力からは複数行のデータの受け取りが可能\n\n");
+        stb.append("<オプション>\n");
+        stb.append("-o:出力ファイルパス\n\n");
+        stb.append("<特筆事項>\n");
+        stb.append("現在サポートしているチャートは蝋燭足チャートのみです。\n");
+        return stb.toString();
+    }
+
+    @Override
+    protected final String usageString() {
+        return "Usage:chart [DATA] -o output path";
+    }
+
+    /**
+     * 引数を列番号のDefaultHighLowDatasetに変換する.
+     * @param list 標準出力リスト
+     * @return DefaultHighLowDataset
+     * @throws Exception エラー
+     */
+    private static DefaultHighLowDataset createDataset(
+                final List<String[]> list) throws Exception {
+        int size = list.size();
+        Date[] date = new Date[size];
+        double[] high = new double[size];
+        double[] low = new double[size];
+        double[] open = new double[size];
+        double[] close = new double[size];
+        double[] volume = new double[size];
+
+        for (int i = 0; i < size; i++) {
+            String[] row = list.get(i);
+            date[i] = DateUtil.strToDate(row[0], "yyyy/MM/dd HH:mm");
+            open[i] = Double.parseDouble(row[OPEN_NUM]);
+            high[i] = Double.parseDouble(row[HIGH_NUM]);
+            low[i] = Double.parseDouble(row[LOW_NUM]);
+            close[i] = Double.parseDouble(row[CLOSE_NUM]);
+            volume[i] = 1;
+        }
+
+        DefaultHighLowDataset data =
+                new DefaultHighLowDataset("USD/JPY", date,
+                        high, low, open, close, volume);
+
+        return data;
+    }
+
+    /**
+     * メイン処理.
+     * @param args コマンド引数
+     */
+    public static void main(final String[] args) {
+        (new Chart()).exec(args);
+    }
+}

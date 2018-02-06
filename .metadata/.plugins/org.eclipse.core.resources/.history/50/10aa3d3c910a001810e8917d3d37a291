@@ -1,0 +1,84 @@
+package net.zive.shibayu.cli;
+
+import gnu.getopt.Getopt;
+import gnu.getopt.LongOpt;
+
+/**
+ * CLI基底クラス.
+ * @author Yu.Sba
+ *
+ */
+public abstract class BaseCli {
+    /**
+     * リターンコード(正常終了).
+     */
+    public static final int RET_CODE_NORMAL_END = 0;
+
+    /**
+     * リターンコード(引数エラー).
+     */
+    public static final int RET_CODE_ARG_ERR = 1;
+    
+    /**
+     * リターンコード(ヘルプ表示).
+     */
+    public static final int RET_CODE_HELP = 9;
+
+    /**
+     * リターンコード(システムエラー).
+     */
+    public static final int RET_SYSTEM_ERR = -9;
+
+    /**
+     * CLIコマンド実行.
+     * @param args コマンド行引数.
+     */
+    public void exec(final String[] args) {
+        try {
+            checkHelp(args);
+            checkArgs(args);
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.exit(RET_SYSTEM_ERR);
+        }
+        System.exit(RET_CODE_NORMAL_END);
+    }
+
+    /**
+     * ヘルプ表示チェック.
+     * @param args コマンド引数
+     */
+    private void checkHelp(final String[] args) {
+        LongOpt[] longopts = new LongOpt[1];
+        longopts[0] = new LongOpt("help", LongOpt.NO_ARGUMENT, null, 'h');
+        Getopt g = new Getopt(this.getClass().getName(), args, "h", longopts);
+
+        int c = -1;
+        while ((c = g.getopt()) != -1) {
+            switch (c) {
+            case 'h':
+                System.out.println(helpString());
+                System.exit(RET_CODE_HELP);
+            default:
+            }
+        }
+    }
+
+    /**
+     * コマンド引数チェック.
+     * @param args コマンド引数
+     */
+    protected abstract boolean checkArgs(String[] args);
+
+    /**
+     * ヘルプメッセージを返す.
+     * @return ヘルプメッセージ
+     */
+    protected abstract String helpString();
+
+    /**
+     * Usageを返す.
+     * @return ヘルプメッセージ
+     */
+    protected abstract String usageString();
+}

@@ -1,0 +1,154 @@
+package net.zive.shibayu.cli;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+
+import gnu.getopt.Getopt;
+import gnu.getopt.LongOpt;
+
+/**
+ * CLI基底クラス.
+ * @author Yu.Sba
+ *
+ */
+public abstract class BaseCli {
+    /**
+     * リターンコード(正常終了).
+     */
+    public static final int RET_CODE_NORMAL_END = 0;
+
+    /**
+     * リターンコード(引数エラー).
+     */
+    public static final int RET_CODE_ARG_ERR = 1;
+
+    /**
+     * リターンコード(ヘルプ表示).
+     */
+    public static final int RET_CODE_HELP = 9;
+
+    /**
+     * リターンコード(システムエラー).
+     */
+    public static final int RET_SYSTEM_ERR = -9;
+
+    /**
+     * 標準入力受付スリープ時間.
+     */
+    private static final int WAIT_TIME = 100;
+
+    /**
+     * 標準入力モード.
+     */
+    private boolean systemInMode = false;
+
+    /**
+     * CLIコマンド実行.
+     * @param args コマンド行引数.
+     */
+    public void exec(final String[] args) {
+        checkHelp(args);
+        if (!checkArgs(args)) {
+            System.out.println(usageString());
+            System.exit(RET_CODE_ARG_ERR);
+        }
+
+        try {
+            // 標準入力モード
+            if (systemInMode) {
+                acceptSystemIn();
+            // コマンド入力モード
+            } else {
+                peform();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.exit(RET_SYSTEM_ERR);
+        }
+        System.exit(RET_CODE_NORMAL_END);
+    }
+
+    /**
+     * 標準入力受付処理.
+     * @throws Exception エラー
+     */
+    private void acceptSystemIn() throws Exception {
+        while (System.in.available() == 0) {
+            Thread.sleep(WAIT_TIME);
+        }
+
+        BufferedReader br = new BufferedReader(
+                new InputStreamReader(System.in));
+        String line = null;
+        try {
+            while ((line = br.readLine()) != null) {
+                receiveSystemInLine(line);
+                peform();
+            }
+        } catch (IOException e) {
+            throw e;
+        } finally {
+            br.close();
+        }
+    }
+
+    /**
+     * ヘルプ表示チェック.
+     * @param args コマンド引数
+     */
+    private void checkHelp(final String[] args) {
+        LongOpt[] longopts = new LongOpt[1];
+        longopts[0] = new LongOpt("help", LongOpt.NO_ARGUMENT, null, 'h');
+        Getopt g = new Getopt(this.getClass().getName(), args, "h", longopts);
+
+        int c = -1;
+        while ((c = g.getopt()) != -1) {
+            switch (c) {
+            case 'h':
+                System.out.println(helpString());
+                System.exit(RET_CODE_HELP);
+            default:
+            }
+        }
+    }
+
+    /**
+     * 標準入力モード設定.
+     * @param mode true:標準入力モード、false:コマンド入力モード
+     */
+    public void setSystemInMode(final boolean mode) {
+        systemInMode = mode;
+    }
+
+    /**
+     * コマンド引数チェック.
+     * @param args コマンド引数
+     * @return true:成功、false:チェックエラー
+     */
+    protected abstract boolean checkArgs(String[] args);
+
+    /**
+     * メイン処理.
+     * @throws Exception エラー
+     */
+    protected abstract void peform()throws Exception;
+
+    /**
+     * 標準入力から一行を受け取った際に呼び出すコールメソッド.
+     * @param line 標準入力の一行
+     */
+    protected abstract void receiveSystemInLine(String line);
+
+    /**
+     * ヘルプメッセージを返す.
+     * @return ヘルプメッセージ
+     */
+    protected abstract String helpString();
+
+    /**
+     * Usageを返す.
+     * @return ヘルプメッセージ
+     */
+    protected abstract String usageString();
+}

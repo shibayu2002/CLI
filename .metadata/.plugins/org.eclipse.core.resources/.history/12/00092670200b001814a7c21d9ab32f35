@@ -1,0 +1,120 @@
+package net.zive.shibayu.cli;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+
+/**
+ * CLI基底クラス.
+ * @author Yu.Sba
+ *
+ */
+public abstract class BaseFileInCli extends BaseCli {
+    /**
+     * リターンコード(正常終了).
+     */
+    public static final int RET_CODE_NORMAL_END = 0;
+
+    /**
+     * リターンコード(引数エラー).
+     */
+    public static final int RET_CODE_ARG_ERR = 1;
+
+    /**
+     * リターンコード(ヘルプ表示).
+     */
+    public static final int RET_CODE_HELP = 9;
+
+    /**
+     * リターンコード(システムエラー).
+     */
+    public static final int RET_SYSTEM_ERR = -9;
+
+    /**
+     * 標準入力受付スリープ時間.
+     */
+    private static final int WAIT_TIME = 100;
+
+    /**
+     * 標準入力モード.
+     */
+    private boolean systemInMode = false;
+
+    /**
+     * 基礎データ（第１引数 or 標準入力から受け取った値）.
+     */
+    private String baseData = null;
+
+    /**
+     * CLIコマンド実行.
+     * @param args コマンド行引数.
+     */
+    public void exec(final String[] args) {
+        super.exec(args);
+        if (!checkArgs(args)) {
+            System.out.println(usageString());
+            System.exit(RET_CODE_ARG_ERR);
+            return;
+        }
+
+        try {
+            // 標準入力モード
+            if (systemInMode) {
+                acceptSystemIn();
+            // コマンド入力モード
+            } else {
+                beforeAccept();
+                accept(baseData);
+                afterAccept();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            System.exit(RET_SYSTEM_ERR);
+        }
+        System.exit(RET_CODE_NORMAL_END);
+    }
+
+    /**
+     * 標準入力受付処理.
+     * @throws Exception エラー
+     */
+    private void acceptSystemIn() throws Exception {
+        while (System.in.available() == 0) {
+            Thread.sleep(WAIT_TIME);
+        }
+
+        BufferedReader br = new BufferedReader(
+                new InputStreamReader(System.in));
+        String line = null;
+        try {
+            beforeAccept();
+            while ((line = br.readLine()) != null) {
+                accept(line);
+            }
+            afterAccept();
+        } catch (IOException e) {
+            throw e;
+        } finally {
+            br.close();
+        }
+    }
+
+    /**
+     * メイン前処理.
+     * @throws Exception エラー
+     */
+    protected abstract void beforeAccept() throws Exception;
+
+    /**
+     * メイン処理.
+     * @param data 基礎データ
+     * @throws Exception エラー
+     */
+    protected abstract void accept(String data) throws Exception;
+
+    /**
+     * メイン後処理.
+     * @throws Exception エラー
+     */
+    protected abstract void afterAccept() throws Exception;
+}

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<launchConfiguration type="org.eclipse.jdt.launching.localJavaApplication">
+<listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_PATHS">
+<listEntry value="/JCat/src/net/zive/shibayu/cli/JCat.java"/>
+</listAttribute>
+<listAttribute key="org.eclipse.debug.core.MAPPED_RESOURCE_TYPES">
+<listEntry value="1"/>
+</listAttribute>
+<stringAttribute key="org.eclipse.jdt.launching.MAIN_TYPE" value="net.zive.shibayu.cli.JCat"/>
+<stringAttribute key="org.eclipse.jdt.launching.PROGRAM_ARGUMENTS" value="C:\Users\優\Downloads\USDJPY_201801\201801\USDJPY_20180102.csv -s 1 -e 10"/>
+<stringAttribute key="org.eclipse.jdt.launching.PROJECT_ATTR" value="JCat"/>
+</launchConfiguration>
