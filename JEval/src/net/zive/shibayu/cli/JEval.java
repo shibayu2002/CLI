@@ -1,5 +1,6 @@
 package net.zive.shibayu.cli;
 
+import gnu.getopt.Getopt;
 import jp.hishidama.eval.ExpRuleFactory;
 import jp.hishidama.eval.Expression;
 import jp.hishidama.eval.Rule;
@@ -11,8 +12,25 @@ import net.zive.shibayu.cli.base.BaseFileInCli;
  *
  */
 public class JEval extends BaseFileInCli {
+    /**
+     * 小数点の有効桁数 .
+     */
+    private int roundValue = -1;
+
     @Override
     protected final boolean checkArgs(final String[] args) {
+        Getopt g = new Getopt(this.getClass().getName(), args, "r:");
+
+        int c = -1;
+        while ((c = g.getopt()) != -1) {
+            switch (c) {
+            case 'r':
+                roundValue = Integer.parseInt(g.getOptarg());
+                break;
+            default:
+                return false;
+            }
+        }
         return true;
     }
 
@@ -25,7 +43,12 @@ public class JEval extends BaseFileInCli {
         Rule rule = ExpRuleFactory.getDefaultRule();
         Expression exp = rule.parse(data);
         double result = exp.evalDouble();
-        System.out.println(result);
+        if (roundValue > 0) {
+            System.out.println(String.format(
+                    "%." + roundValue + "f", result));
+        } else {
+            System.out.println(result);
+        }
         return true;
     }
 
@@ -44,6 +67,8 @@ public class JEval extends BaseFileInCli {
         stb.append("<引数>\n");
         stb.append("FILE:ファイル(※省略可)\n");
         stb.append("* FILEを省略した場合は標準入力からデータを受取る。");
+        stb.append("<オプション>\n");
+        stb.append("-r:有効桁数\n\n");
         return stb.toString();
     }
 

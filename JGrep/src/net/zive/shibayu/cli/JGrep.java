@@ -13,7 +13,7 @@ import net.zive.shibayu.cli.base.BaseFileInCli;
  */
 public class JGrep extends BaseFileInCli {
     /**
-     * 表示列番号.
+     * 検索パターン.
      */
     private Pattern pattern = null;
 

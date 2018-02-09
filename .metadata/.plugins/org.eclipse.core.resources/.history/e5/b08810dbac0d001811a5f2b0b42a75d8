@@ -1,0 +1,90 @@
+package net.zive.shibayu.cli;
+
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import gnu.getopt.Getopt;
+import net.zive.shibayu.cli.base.BaseFileInCli;
+
+/**
+ * jgrepコマンド.
+ * @author Yu.Sba
+ *
+ */
+public class JReplace extends BaseFileInCli {
+    /**
+     * 検索パターン.
+     */
+    private Pattern pattern = null;
+
+    /**
+     * 置換文字列.
+     */
+    private String value = null;
+
+    @Override
+    protected final boolean checkArgs(final String[] args) {
+        Getopt g = new Getopt(this.getClass().getName(), args, "p:v:");
+
+        int c = -1;
+        while ((c = g.getopt()) != -1) {
+            switch (c) {
+            case 'p':
+                pattern = Pattern.compile(g.getOptarg());
+                break;
+            case 'v':
+                value = g.getOptarg();
+                break;
+            default:
+                return false;
+            }
+        }
+        return true;
+    }
+
+    @Override
+    protected void beforeAccept() throws Exception {
+    }
+
+    @Override
+    protected final boolean accept(final String data) throws Exception {
+        Matcher m = pattern.matcher(data);
+        String result = m.replaceAll(value);
+        System.out.println(result);
+        return true;
+    }
+
+    @Override
+    protected void afterAccept() throws Exception {
+    }
+
+    @Override
+    protected final String helpString() {
+        StringBuilder stb = new StringBuilder();
+        stb.append("<概要>\n");
+        stb.append("jreplaceコマンド。\n");
+        stb.append("指定された検索文字列に該当する値を指定された値に置換し出力する。\n\n");
+        stb.append("<コマンド>\n");
+        stb.append("jreplace [FILE] -p 検索文字列(正規表現) -v 置換文字列 \n\n");
+        stb.append("<引数>\n");
+        stb.append("FILE:ファイル(※省略可)\n");
+        stb.append("* FILEを省略した場合は標準入力からデータを受取る。");
+        stb.append("<オプション>\n");
+        stb.append("-p:検索文字列(正規表現)\n");
+        stb.append("-v:置換文字列\n");
+        return stb.toString();
+    }
+
+    @Override
+    protected final String usageString() {
+        return "Usage:jreplace [FILE] -p 検索文字列(正規表現) -v 置換文字列";
+    }
+
+    /**
+     * メイン処理.
+     * @param args コマンド引数
+     */
+    public static void main(final String[] args) {
+        (new JReplace()).exec(args);
+    }
+}

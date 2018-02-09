@@ -2,12 +2,33 @@
 <qualifiedTypeNameHistroy>
 <fullyQualifiedTypeName name="gnu.getopt.LongOpt"/>
 <fullyQualifiedTypeName name="gnu.getopt.Getopt"/>
-<fullyQualifiedTypeName name="net.zive.shibayu.cli.BaseCli"/>
 <fullyQualifiedTypeName name="java.lang.StringBuilder"/>
-<fullyQualifiedTypeName name="java.io.File"/>
 <fullyQualifiedTypeName name="java.io.FileReader"/>
 <fullyQualifiedTypeName name="java.lang.Exception"/>
 <fullyQualifiedTypeName name="java.io.BufferedReader"/>
 <fullyQualifiedTypeName name="java.io.InputStreamReader"/>
 <fullyQualifiedTypeName name="java.io.IOException"/>
+<fullyQualifiedTypeName name="java.io.File"/>
+<fullyQualifiedTypeName name="org.jfree.data.xy.DefaultHighLowDataset"/>
+<fullyQualifiedTypeName name="java.util.List"/>
+<fullyQualifiedTypeName name="net.zive.shibayu.com.DateUtil"/>
+<fullyQualifiedTypeName name="java.util.LinkedList"/>
+<fullyQualifiedTypeName name="org.jfree.chart.renderer.xy.CandlestickRenderer"/>
+<fullyQualifiedTypeName name="java.awt.Color"/>
+<fullyQualifiedTypeName name="java.awt.BasicStroke"/>
+<fullyQualifiedTypeName name="org.jfree.chart.axis.DateAxis"/>
+<fullyQualifiedTypeName name="org.jfree.chart.axis.NumberAxis"/>
+<fullyQualifiedTypeName name="org.jfree.chart.plot.XYPlot"/>
+<fullyQualifiedTypeName name="org.jfree.chart.JFreeChart"/>
+<fullyQualifiedTypeName name="org.jfree.chart.ChartUtilities"/>
+<fullyQualifiedTypeName name="net.zive.shibayu.cli.Price"/>
+<fullyQualifiedTypeName name="java.util.Date"/>
+<fullyQualifiedTypeName name="net.zive.shibayu.cli.BaseCli"/>
+<fullyQualifiedTypeName name="net.zive.shibayu.cli.base.BaseFileInCli"/>
+<fullyQualifiedTypeName name="java.util.regex.Pattern"/>
+<fullyQualifiedTypeName name="java.util.regex.Matcher"/>
+<fullyQualifiedTypeName name="jp.hishidama.eval.Rule"/>
+<fullyQualifiedTypeName name="jp.hishidama.eval.ExpRuleFactory"/>
+<fullyQualifiedTypeName name="java.beans.Expression"/>
+<fullyQualifiedTypeName name="jp.hishidama.eval.Expression"/>
 </qualifiedTypeNameHistroy>

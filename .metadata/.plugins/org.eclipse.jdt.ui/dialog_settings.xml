@@ -24,11 +24,16 @@
 	</section>
 	<section name="FatJarPackageWizard">
 		<item value="D:\opt\eclipse\jee-neon\eclipse\workspace_cli" key="FatJarPackageWizardPage.ANTSCRIPT_LOCATION"/>
-		<item value="JCat - JCat" key="FatJarPackageWizardPage.LAUNCH_CONFIGURATION_SELECTION_NAME"/>
-		<item value="D:\opt\eclipse\jee-neon\eclipse\workspace_cli\release\jcat.jar" key="FatJarPackageWizardPage.DESTINATION_PATH_SELECTION"/>
+		<item value="JReplace - JReplace" key="FatJarPackageWizardPage.LAUNCH_CONFIGURATION_SELECTION_NAME"/>
+		<item value="D:\opt\eclipse\jee-neon\eclipse\workspace_cli\release\jreplace.jar" key="FatJarPackageWizardPage.DESTINATION_PATH_SELECTION"/>
 		<item value="false" key="FatJarPackageWizardPage.ANTSCRIPT_SAVE"/>
 		<item value="1" key="FatJarPackageWizardPage.LIBRARY_HANDLING"/>
 		<list key="FatJarPackageWizardPage.DESTINATION_NAMES_ID">
+			<item value="D:\opt\eclipse\jee-neon\eclipse\workspace_cli\release\jreplace.jar"/>
+			<item value="D:\opt\eclipse\jee-neon\eclipse\workspace_cli\release\jeval.jar"/>
+			<item value="D:\opt\eclipse\jee-neon\eclipse\workspace_cli\release\jgrep.jar"/>
+			<item value="D:\opt\eclipse\jee-neon\eclipse\workspace_cli\release\jchart.jar"/>
+			<item value="D:\opt\eclipse\jee-neon\eclipse\workspace_cli\release\jprojection.jar"/>
 			<item value="D:\opt\eclipse\jee-neon\eclipse\workspace_cli\release\jcat.jar"/>
 		</list>
 		<list key="FatJarPackageWizardPage.ANTSCRIPT_LOCATION_HISTORY">
@@ -49,6 +54,7 @@
 	</section>
 	<section name="OptionalMessageDialog.hide.">
 		<item value="true" key="org.eclipse.jdt.ui.typecomment.deprecated"/>
+		<item value="true" key="RunnableJar.export.ipwarning"/>
 	</section>
 	<section name="NewPackageWizardPage">
 		<item value="false" key="create_package_info_java"/>
@@ -56,7 +62,7 @@
 	<section name="quick_assist_proposal_size">
 	</section>
 	<section name="BuildPathsPropertyPage">
-		<item value="1" key="pageIndex"/>
+		<item value="2" key="pageIndex"/>
 	</section>
 	<section name="completion_proposal_size">
 	</section>
